@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fresh & Easy Recipes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+    body { background-color: #f0f8ff; color: #222; }
+
+    header { background: linear-gradient(90deg, #0ea5e9, #3b82f6); color: #fff; padding: 1.5rem; text-align: center; }
+    header h1 { font-size: 2rem; margin-bottom: .5rem; }
+    header input { border: none; border-radius: 30px; padding: .6rem 1rem; width: 90%; max-width: 420px; }
+
+    nav { display: flex; justify-content: center; flex-wrap: wrap; gap: .6rem; margin: 1rem 0; padding: 0 1rem; }
+    nav button { border: none; background: #e0f2fe; color: #0369a1; border-radius: 20px; padding: .55rem 1rem; cursor: pointer; font-weight: 600; transition: background .2s; }
+    nav button.active, nav button:hover { background: #0ea5e9; color: white; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; padding: 1.25rem; }
+
+    .card { position: relative; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,.12); background: #fff; transition: transform .2s, box-shadow .2s; min-height: 340px; display: flex; flex-direction: column; justify-content: flex-end; isolation: isolate; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 10px 18px rgba(0,0,0,.18); }
+
+    .card::before { content: ""; position: absolute; inset: 0; background-image: var(--bg); background-size: cover; background-position: center; filter: brightness(.82); z-index: -1; }
+
+    .time { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,.92); color: #0369a1; border-radius: 16px; font-size: .85rem; padding: 4px 10px; font-weight: 600; }
+
+    .card h3 { padding: .9rem; background: linear-gradient(to top, rgba(255,255,255,.98), rgba(255,255,255,.8)); text-align: center; font-weight: 700; }
+    .card button { display: block; background: #0ea5e9; color: #fff; font-weight: 700; border: none; width: 100%; padding: .9rem; cursor: pointer; font-size: 1rem; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px; }
+
+    .hidden { display: none !important; }
+
+    /* Detail page (SPA) */
+    .detail { max-width: 980px; margin: 1rem auto; background: #fff; border-radius: 16px; box-shadow: 0 10px 22px rgba(0,0,0,.08); overflow: hidden; }
+    .detail-header { background: linear-gradient(180deg, #bae6fd, #e0f2fe); padding: 1rem 1.2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .detail-title { font-size: 1.3rem; font-weight: 700; color: #0f172a; }
+    .badge { background: #0ea5e9; color: #fff; padding: .28rem .65rem; border-radius: 14px; font-size: .85rem; font-weight: 700; }
+    .detail-content { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem 1.2rem 1.2rem; }
+    .detail h4 { color: #0f172a; margin-bottom: .5rem; }
+    .detail ul { padding-left: 1rem; line-height: 1.8; }
+    .back { margin: .8rem auto 1rem; display: block; background:#0ea5e9; color:#fff; border:0; border-radius:24px; padding:.6rem 1.2rem; cursor:pointer; font-weight:700; }
+
+    footer { background: #e0f2fe; color: #0369a1; padding: 1.5rem; text-align: center; font-size: .9rem; line-height: 1.6; border-top: 1px solid #bae6fd; }
+    .footer-bottom { margin-top: 1rem; display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .btn-pill { background:#0ea5e9; color:#fff; border:none; border-radius:20px; padding:.5rem 1.1rem; cursor:pointer; font-weight:700; }
+
+    /* Modal */
+    .modal { position: fixed; inset: 0; display: none; place-items: center; background: rgba(0,0,0,.45); padding: 1rem; }
+    .modal.active { display: grid; }
+    .modal-card { background: #fff; max-width: 720px; width: 100%; border-radius: 16px; padding: 1.25rem 1.25rem 1rem; box-shadow: 0 12px 32px rgba(0,0,0,.2); }
+    .modal-card h3 { margin-bottom: .75rem; color: #0f172a; }
+    .modal-card .close { float: right; border: 0; background: transparent; font-size: 1.2rem; cursor: pointer; }
+
+    @media(max-width:900px){ .detail-content{ grid-template-columns: 1fr; } }
+    @media(max-width:700px){ header h1{font-size:1.5rem;} nav button{font-size:.85rem;} .grid{ padding:1rem; gap:1rem; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🥗 Fresh & Easy Recipes</h1>
+    <input id="searchInput" type="text" placeholder="Search for a recipe..." />
+  </header>
+
+  <nav id="filters">
+    <button class="active" data-filter="all">All</button>
+    <button data-filter="desserts">Desserts</button>
+    <button data-filter="pasta">Pasta</button>
+    <button data-filter="beef">Beef</button>
+    <button data-filter="chicken">Chicken</button>
+    <button data-filter="sides">Sides</button>
+  </nav>
+
+  <!-- Cards (same recipes, different order). Using PNGs and larger visual space. -->
+  <section class="grid" id="grid">
+    <!-- DESSERTS first -->
+    <div class="card" style="--bg:url('images/14.png')" data-cat="desserts" data-title="Apple Pie" data-slug="apple-pie"><div class="time">⏱️ 60min</div><h3>Apple Pie</h3><button class="view-btn">View Recipe</button></div>
+    <div class="card" style="--bg:url('images/10.png')" data-cat="desserts" data-title="Chocolate Fudge Cake" data-slug="chocolate-fudge-cake"><div class="time">⏱️ 45min</div><h3>Chocolate Fudge Cake</h3><button class="view-btn">View Recipe</button></div>
+    <div class="card" style="--bg:url('images/13.png')" data-cat="desserts" data-title="Brownies (no mixer)" data-slug="brownies-no-mixer"><div class="time">⏱️ 25min</div><h3>Brownies (no mixer)</h3><button class="view-btn">View Recipe</button></div>
+    <div class="card" style="--bg:url('images/15.png')" data-cat="desserts" data-title="Banana Pancakes (3 ingredients)" data-slug="banana-pancakes-3-ingredients"><div class="time">⏱️ 10min</div><h3>Banana Pancakes (3 ingredients)</h3><button class="view-btn">View Recipe</button></div>
+
+    <!-- PASTA next -->
+    <div class="card" style="--bg:url('images/7.png')" data-cat="pasta" data-title="Spaghetti Carbonara" data-slug="spaghetti-carbonara"><div class="time">⏱️ 20min</div><h3>Spaghetti Carbonara</h3><button class="view-btn">View Recipe</button></div>
+    <div class="card" style="--bg:url('images/9.png')" data-cat="pasta" data-title="Lasagna Bolognese" data-slug="lasagna-bolognese"><div class="time">⏱️ 70min</div><h3>Lasagna Bolognese</h3><button class="view-btn">View Recipe</button></div>
+    <div class="card" style="--bg:url('images/8.png')" data-cat="pasta" data-title="Mac and Cheese" data-slug="mac-and-cheese"><div class="time">⏱️ 30min</div><h3>Mac and Cheese</h3><button class="view-btn">View Recipe</button></div>
+
+    <!-- BEEF -->
+    <div class="card" style="--bg:url('images/6.png')" data-cat="beef" data-title="Cheeseburger Sliders" data-slug="cheeseburger-sliders"><div class="time">⏱️ 25min</div><h3>Cheeseburger Sliders</h3><button class="view-btn">View Recipe</button></div>
+    <div class="card" style="--bg:url('images/4.png')" data-cat="beef" data-title="Classic Meatloaf" data-slug="classic-meatloaf"><div class="time">⏱️ 60min</div><h3>Classic Meatloaf</h3><button class="view-btn">View Recipe</button></div>
+    <div class="card" style="--bg:url('images/5.png')" data-cat="beef" data-title="Beef Tacos" data-slug="beef-tacos"><div class="time">⏱️ 20min</div><h3>Beef Tacos</h3><button class="view-btn">View Recipe</button></div>
+
+    <!-- CHICKEN last before sides -->
+    <div class="card" style="--bg:url('images/2.png')" data-cat="chicken" data-title="Buffalo Wings" data-slug="buffalo-wings"><div class="time">⏱️ 40min</div><h3>Buffalo Wings</h3><button class="view-btn">View Recipe</button></div>
+    <div class="card" style="--bg:url('images/1.png')" data-cat="chicken" data-title="Crispy Airfryer Chicken" data-slug="crispy-airfryer-chicken"><div class="time">⏱️ 30min</div><h3>Crispy Airfryer Chicken</h3><button class="view-btn">View Recipe</button></div>
+    <div class="card" style="--bg:url('images/3.png')" data-cat="chicken" data-title="BBQ Chicken Sandwich" data-slug="bbq-chicken-sandwich"><div class="time">⏱️ 25min</div><h3>BBQ Chicken Sandwich</h3><button class="view-btn">View Recipe</button></div>
+
+    <!-- SIDES -->
+    <div class="card" style="--bg:url('images/16.png')" data-cat="sides" data-title="Perfect Fluffy Rice" data-slug="perfect-fluffy-rice"><div class="time">⏱️ 15min</div><h3>Perfect Fluffy Rice</h3><button class="view-btn">View Recipe</button></div>
+    <div class="card" style="--bg:url('images/18.png')" data-cat="sides" data-title="Coleslaw Salad" data-slug="coleslaw-salad"><div class="time">⏱️ 10min</div><h3>Coleslaw Salad</h3><button class="view-btn">View Recipe</button></div>
+    <div class="card" style="--bg:url('images/17.png')" data-cat="sides" data-title="Garlic Mashed Potatoes" data-slug="garlic-mashed-potatoes"><div class="time">⏱️ 20min</div><h3>Garlic Mashed Potatoes</h3><button class="view-btn">View Recipe</button></div>
+  </section>
+
+  <!-- Detail Page (SPA) -->
+  <section id="recipePage" class="detail hidden" aria-live="polite">
+    <div class="detail-header">
+      <div>
+        <div id="detailTitle" class="detail-title">Recipe</div>
+        <small id="detailCat" class="badge">Category</small>
+      </div>
+      <div id="detailTime" class="badge">⏱️</div>
+    </div>
+    <div class="detail-content">
+      <div>
+        <h4>Ingredients</h4>
+        <ul id="detailIngredients"></ul>
+      </div>
+      <div>
+        <h4>Directions</h4>
+        <ul id="detailSteps"></ul>
+      </div>
+    </div>
+    <button class="back" id="backBtn" type="button">← Back to recipes</button>
+  </section>
+
+  <footer>
+    <p>This site is not affiliated with YouTube or Google LLC. It is not endorsed or sponsored by YouTube in any way. YouTube is a registered trademark of Google LLC.</p>
+    <br />
+    <p>All content on this site is protected by copyright and intellectual property laws. Reproduction or distribution of any part of this website without permission is prohibited.</p>
+    <br />
+    <p>The information provided is for educational and informational purposes only. Individual results may vary. This product is not intended to diagnose, treat, cure, or prevent any disease. Always consult a healthcare professional before starting any supplement or health program.</p>
+    <div class="footer-bottom">
+      <p>© 2025 Home Recipes. All rights reserved.</p>
+      <button class="btn-pill" onclick="openModal('termsModal')">Terms & Use</button>
+      <button class="btn-pill" onclick="openModal('policyModal')">Policy</button>
+    </div>
+  </footer>
+
+  <!-- Terms Modal -->
+  <div id="termsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
+    <div class="modal-card">
+      <button class="close" aria-label="Close" onclick="closeModal('termsModal')">✕</button>
+      <h3 id="termsTitle">Terms & Use</h3>
+      <p>This website is for educational and informational purposes only. Use of the site constitutes acceptance of these terms. Do not reproduce content without permission.</p>
+    </div>
+  </div>
+
+  <!-- Policy Modal -->
+  <div id="policyModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="policyTitle">
+    <div class="modal-card">
+      <button class="close" aria-label="Close" onclick="closeModal('policyModal')">✕</button>
+      <h3 id="policyTitle">Privacy Policy</h3>
+      <p>We do not collect personal information beyond what is necessary to operate this site. Cookies may be used for basic functionality. By using this site, you agree to this simple policy.</p>
+    </div>
+  </div>
+
+  <script>
+    // Details store (same content as versão anterior)
+    const RECIPES = {
+      'crispy-airfryer-chicken': { title: 'Crispy Airfryer Chicken', cat: 'Chicken', time: '30 min', ingredients: ['2 chicken breasts','1 tbsp olive oil','1 tsp paprika','1/2 tsp garlic powder','Salt & pepper'], steps: ['Preheat airfryer to 200°C / 390°F.','Toss chicken with oil and spices.','Airfry 10–12 min per side until 74°C / 165°F.','Rest 3 minutes and serve.'] },
+      'buffalo-wings': { title: 'Buffalo Wings', cat: 'Chicken', time: '40 min', ingredients: ['1 kg chicken wings','1/3 cup hot sauce','2 tbsp butter','1 tsp garlic powder','Salt'], steps: ['Bake or airfry wings until crispy.','Melt butter with hot sauce and garlic.','Toss wings in sauce and serve.'] },
+      'bbq-chicken-sandwich': { title: 'BBQ Chicken Sandwich', cat: 'Chicken', time: '25 min', ingredients: ['2 chicken breasts, shredded','1/2 cup BBQ sauce','Burger buns','Coleslaw (optional)'], steps: ['Shred cooked chicken.','Warm with BBQ sauce.','Pile on buns and top with coleslaw.'] },
+      'classic-meatloaf': { title: 'Classic Meatloaf', cat: 'Beef', time: '60 min', ingredients: ['500g ground beef','1 egg','1/2 cup breadcrumbs','1/4 cup milk','2 tbsp ketchup','Salt & pepper'], steps: ['Preheat oven to 180°C / 350°F.','Mix all ingredients and form a loaf.','Top with ketchup and bake 45–55 minutes.','Rest and slice.'] },
+      'beef-tacos': { title: 'Beef Tacos', cat: 'Beef', time: '20 min', ingredients: ['400g ground beef','Taco seasoning','Taco shells','Lettuce, tomato, cheese'], steps: ['Brown beef and add seasoning.','Fill shells and add toppings.'] },
+      'cheeseburger-sliders': { title: 'Cheeseburger Sliders', cat: 'Beef', time: '25 min', ingredients: ['500g ground beef','Slider buns','Cheese slices','Onion, pickles'], steps: ['Press beef into sheet pan and bake.','Top with cheese and cut into squares.','Assemble sliders with buns and toppings.'] },
+      'spaghetti-carbonara': { title: 'Spaghetti Carbonara', cat: 'Pasta', time: '20 min', ingredients: ['200g spaghetti','2 eggs','60g parmesan','80g pancetta/bacon','Black pepper'], steps: ['Cook pasta al dente.','Fry pancetta.','Toss hot pasta with eggs and cheese off heat.','Season with pepper.'] },
+      'mac-and-cheese': { title: 'Mac and Cheese', cat: 'Pasta', time: '30 min', ingredients: ['200g elbow macaroni','2 tbsp butter','2 tbsp flour','1.5 cups milk','1.5 cups cheddar'], steps: ['Cook pasta.','Make roux with butter and flour, whisk in milk.','Add cheese to melt and combine with pasta.'] },
+      'lasagna-bolognese': { title: 'Lasagna Bolognese', cat: 'Pasta', time: '70 min', ingredients: ['Lasagna sheets','Bolognese sauce','Bechamel','Mozzarella'], steps: ['Layer sauces and pasta in a dish.','Bake until bubbly and golden.'] },
+      'chocolate-fudge-cake': { title: 'Chocolate Fudge Cake', cat: 'Cakes', time: '45 min', ingredients: ['1 1/2 cups flour','1 cup sugar','1/2 cup cocoa powder','1 tsp baking powder','2 eggs','1/2 cup milk','1/3 cup oil','Pinch of salt'], steps: ['Preheat oven to 180°C / 350°F.','Mix dry and wet ingredients until smooth.','Bake 30–35 minutes and cool.'] },
+      'lemon-pound-cake': { title: 'Lemon Pound Cake', cat: 'Cakes', time: '50 min', ingredients: ['1 cup butter','1 1/2 cups sugar','4 eggs','2 cups flour','Zest of 2 lemons','1/3 cup lemon juice','1 tsp baking powder'], steps: ['Cream butter and sugar.','Add eggs, then dry ingredients and lemon.','Bake 45–55 minutes.'] },
+      'vanilla-sheet-cake': { title: 'Vanilla Sheet Cake', cat: 'Cakes', time: '40 min', ingredients: ['2 cups flour','1 1/2 cups sugar','2 tsp baking powder','1/2 tsp salt','3 eggs','3/4 cup milk','1/2 cup oil','1 tbsp vanilla'], steps: ['Combine dry ingredients.','Whisk in wet ingredients.','Bake 25–30 minutes and frost.'] },
+      'brownies-no-mixer': { title: 'Brownies (no mixer)', cat: 'Desserts', time: '25 min', ingredients: ['1/2 cup butter','1 cup sugar','2 eggs','1/3 cup cocoa','1/2 cup flour','Pinch of salt'], steps: ['Melt butter, whisk with sugar and eggs.','Stir in cocoa, flour, salt.','Bake 18–22 minutes.'] },
+      'apple-pie': { title: 'Apple Pie', cat: 'Desserts', time: '60 min', ingredients: ['Pie crusts','5 apples','1/2 cup sugar','1 tsp cinnamon','1 tbsp flour','1 tbsp butter'], steps: ['Mix apple filling.','Fill crust, add top crust and vent.','Bake 45–55 minutes.'] },
+      'banana-pancakes-3-ingredients': { title: 'Banana Pancakes (3 ingredients)', cat: 'Desserts', time: '10 min', ingredients: ['1 banana','1 egg','2 tbsp oats'], steps: ['Mash banana.','Mix with egg and oats.','Cook small pancakes on nonstick pan.'] },
+      'perfect-fluffy-rice': { title: 'Perfect Fluffy Rice', cat: 'Sides', time: '15 min', ingredients: ['1 cup rice','2 cups water','1 tbsp oil','Salt'], steps: ['Rinse rice.','Cook with water, oil and salt until tender.','Rest and fluff.'] },
+      'garlic-mashed-potatoes': { title: 'Garlic Mashed Potatoes', cat: 'Sides', time: '20 min', ingredients: ['600g potatoes','2 cloves garlic','2 tbsp butter','1/4 cup milk','Salt'], steps: ['Boil potatoes with garlic.','Mash with butter and milk.','Season to taste.'] },
+      'coleslaw-salad': { title: 'Coleslaw Salad', cat: 'Sides', time: '10 min', ingredients: ['Shredded cabbage','Shredded carrot','2 tbsp mayo','1 tsp vinegar','Salt & pepper'], steps: ['Combine veggies.','Mix dressing and toss.'] }
+    };
+
+    // Filters
+    const buttons = document.querySelectorAll('#filters button');
+    const cards = document.querySelectorAll('.card');
+    const searchInput = document.getElementById('searchInput');
+    const grid = document.getElementById('grid');
+    const page = document.getElementById('recipePage');
+
+    function applyFilters(){
+      const active = document.querySelector('#filters button.active')?.dataset.filter || 'all';
+      const term = (searchInput.value || '').trim().toLowerCase();
+      cards.forEach(card => {
+        const cat = card.dataset.cat;
+        const title = (card.dataset.title || '').toLowerCase();
+        const byCat = active === 'all' || cat === active;
+        const byTerm = !term || title.includes(term);
+        card.classList.toggle('hidden', !(byCat && byTerm));
+      });
+    }
+
+    buttons.forEach(btn => btn.addEventListener('click', ()=>{ buttons.forEach(b=>b.classList.remove('active')); btn.classList.add('active'); applyFilters(); }));
+    searchInput.addEventListener('input', applyFilters);
+
+    // SPA routing
+    function attachViewListeners(){
+      document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.addEventListener('click', (e)=>{
+          const slug = e.currentTarget.closest('.card').dataset.slug;
+          if(slug){ window.location.hash = '/recipe/' + slug; window.scrollTo({ top:0, behavior:'smooth' }); }
+        });
+      });
+    }
+    attachViewListeners();
+
+    function showPage(showDetail){
+      const filters = document.getElementById('filters');
+      if(showDetail){ grid.classList.add('hidden'); filters.classList.add('hidden'); page.classList.remove('hidden'); }
+      else { page.classList.add('hidden'); filters.classList.remove('hidden'); grid.classList.remove('hidden'); applyFilters(); window.scrollTo({ top:0, behavior:'smooth' }); }
+    }
+
+    function renderDetail(slug){
+      const data = RECIPES[slug];
+      if(!data){ showPage(false); return; }
+      document.getElementById('detailTitle').textContent = data.title;
+      document.getElementById('detailCat').textContent = data.cat;
+      document.getElementById('detailTime').textContent = '⏱️ ' + data.time;
+      document.getElementById('detailIngredients').innerHTML = data.ingredients.map(i=>`<li>${i}</li>`).join('');
+      document.getElementById('detailSteps').innerHTML = data.steps.map(s=>`<li>${s}</li>`).join('');
+      showPage(true);
+    }
+
+    function router(){
+      const hash = window.location.hash || '';
+      const match = hash.match(/^#\/recipe\/([a-z0-9\-]+)/i);
+      if(match){ renderDetail(match[1]); } else { showPage(false); }
+    }
+    window.addEventListener('hashchange', router);
+    router();
+
+    document.getElementById('backBtn').addEventListener('click', ()=>{ window.location.hash = ''; });
+
+    // Modals
+    function openModal(id){ document.getElementById(id).classList.add('active'); }
+    function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+    window.openModal = openModal; window.closeModal = closeModal;
+  </script>
+</body>
+</html>
